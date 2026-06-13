@@ -1,5 +1,9 @@
 from flask import Flask, request, jsonify
-from matrix_ops import MatrixOperations
+from matrix_ops import (
+    MatrixOperations,
+    MatrixDimensionError,
+    MatrixValidationError,
+)
 
 app = Flask(__name__)
 
@@ -11,15 +15,33 @@ def _parse_request():
     matrix_a = data.get("matrix_a")
     matrix_b = data.get("matrix_b")
     if matrix_a is None or matrix_b is None:
-        return None, None, "请求体必须包含 matrix_a 和 matrix_b 字段"
+        missing = []
+        if matrix_a is None:
+            missing.append("matrix_a")
+        if matrix_b is None:
+            missing.append("matrix_b")
+        return matrix_a, matrix_b, f"请求体必须包含 {', '.join(missing)} 字段"
     return matrix_a, matrix_b, None
+
+
+def _safe_get_shape(matrix):
+    try:
+        return list(MatrixOperations.get_shape(matrix))
+    except Exception:
+        return None
 
 
 @app.route("/api/matrix/add", methods=["POST"])
 def matrix_add():
     matrix_a, matrix_b, error = _parse_request()
     if error:
-        return jsonify({"success": False, "error": error}), 400
+        return jsonify({
+            "success": False,
+            "error": error,
+            "operation": "add",
+            "shape_a": _safe_get_shape(matrix_a) if matrix_a is not None else None,
+            "shape_b": _safe_get_shape(matrix_b) if matrix_b is not None else None,
+        }), 400
     try:
         result = MatrixOperations.add(matrix_a, matrix_b)
         return jsonify({
@@ -29,17 +51,51 @@ def matrix_add():
             "shape_b": MatrixOperations.get_shape(matrix_b),
             "result": result,
         })
+    except MatrixDimensionError as e:
+        return jsonify({
+            "success": False,
+            "operation": "add",
+            "error": str(e),
+            "error_code": "DIMENSION_MISMATCH",
+            "shape_a": list(e.shape_a) if e.shape_a else _safe_get_shape(matrix_a),
+            "shape_b": list(e.shape_b) if e.shape_b else _safe_get_shape(matrix_b),
+        }), 400
+    except MatrixValidationError as e:
+        return jsonify({
+            "success": False,
+            "operation": "add",
+            "error": str(e),
+            "error_code": "VALIDATION_ERROR",
+            "shape_a": _safe_get_shape(matrix_a),
+            "shape_b": _safe_get_shape(matrix_b),
+        }), 400
     except (TypeError, ValueError) as e:
-        return jsonify({"success": False, "error": str(e)}), 400
+        return jsonify({
+            "success": False,
+            "operation": "add",
+            "error": str(e),
+            "shape_a": _safe_get_shape(matrix_a),
+            "shape_b": _safe_get_shape(matrix_b),
+        }), 400
     except Exception as e:
-        return jsonify({"success": False, "error": f"服务器内部错误: {str(e)}"}), 500
+        return jsonify({
+            "success": False,
+            "operation": "add",
+            "error": f"服务器内部错误: {str(e)}",
+        }), 500
 
 
 @app.route("/api/matrix/subtract", methods=["POST"])
 def matrix_subtract():
     matrix_a, matrix_b, error = _parse_request()
     if error:
-        return jsonify({"success": False, "error": error}), 400
+        return jsonify({
+            "success": False,
+            "error": error,
+            "operation": "subtract",
+            "shape_a": _safe_get_shape(matrix_a) if matrix_a is not None else None,
+            "shape_b": _safe_get_shape(matrix_b) if matrix_b is not None else None,
+        }), 400
     try:
         result = MatrixOperations.subtract(matrix_a, matrix_b)
         return jsonify({
@@ -49,10 +105,38 @@ def matrix_subtract():
             "shape_b": MatrixOperations.get_shape(matrix_b),
             "result": result,
         })
+    except MatrixDimensionError as e:
+        return jsonify({
+            "success": False,
+            "operation": "subtract",
+            "error": str(e),
+            "error_code": "DIMENSION_MISMATCH",
+            "shape_a": list(e.shape_a) if e.shape_a else _safe_get_shape(matrix_a),
+            "shape_b": list(e.shape_b) if e.shape_b else _safe_get_shape(matrix_b),
+        }), 400
+    except MatrixValidationError as e:
+        return jsonify({
+            "success": False,
+            "operation": "subtract",
+            "error": str(e),
+            "error_code": "VALIDATION_ERROR",
+            "shape_a": _safe_get_shape(matrix_a),
+            "shape_b": _safe_get_shape(matrix_b),
+        }), 400
     except (TypeError, ValueError) as e:
-        return jsonify({"success": False, "error": str(e)}), 400
+        return jsonify({
+            "success": False,
+            "operation": "subtract",
+            "error": str(e),
+            "shape_a": _safe_get_shape(matrix_a),
+            "shape_b": _safe_get_shape(matrix_b),
+        }), 400
     except Exception as e:
-        return jsonify({"success": False, "error": f"服务器内部错误: {str(e)}"}), 500
+        return jsonify({
+            "success": False,
+            "operation": "subtract",
+            "error": f"服务器内部错误: {str(e)}",
+        }), 500
 
 
 @app.route("/api/health", methods=["GET"])

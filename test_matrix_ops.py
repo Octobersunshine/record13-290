@@ -1,6 +1,10 @@
 import unittest
 import numpy as np
-from matrix_ops import MatrixOperations
+from matrix_ops import (
+    MatrixOperations,
+    MatrixDimensionError,
+    MatrixValidationError,
+)
 
 
 class TestMatrixOperations(unittest.TestCase):
@@ -55,29 +59,44 @@ class TestMatrixOperations(unittest.TestCase):
     def test_add_shape_mismatch_raises(self):
         a = [[1, 2, 3], [4, 5, 6]]
         b = [[1, 2], [3, 4]]
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(MatrixDimensionError) as ctx:
             MatrixOperations.add(a, b)
         self.assertIn("维度不匹配", str(ctx.exception))
+        self.assertEqual(ctx.exception.shape_a, (2, 3))
+        self.assertEqual(ctx.exception.shape_b, (2, 2))
 
     def test_subtract_shape_mismatch_raises(self):
         a = [[1, 2], [3, 4], [5, 6]]
         b = [[1, 2], [3, 4]]
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(MatrixDimensionError) as ctx:
             MatrixOperations.subtract(a, b)
         self.assertIn("维度不匹配", str(ctx.exception))
+        self.assertEqual(ctx.exception.shape_a, (3, 2))
+        self.assertEqual(ctx.exception.shape_b, (2, 2))
 
     def test_non_matrix_list_raises(self):
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(MatrixValidationError) as ctx:
             MatrixOperations.add([1, 2, 3], [4, 5, 6])
         self.assertIn("二维矩阵", str(ctx.exception))
 
     def test_invalid_type_raises(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(MatrixValidationError):
             MatrixOperations.add("not a matrix", [[1, 2]])
 
     def test_irregular_matrix_raises(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(MatrixValidationError):
             MatrixOperations.add([[1, 2, 3], [4, 5]], [[1, 2], [3, 4]])
+
+    def test_empty_matrix_raises(self):
+        with self.assertRaises(MatrixValidationError):
+            MatrixOperations.add([[]], [[1]])
+
+    def test_shape_mismatch_error_code_values(self):
+        err = MatrixDimensionError(
+            "test", shape_a=(3, 3), shape_b=(2, 2)
+        )
+        self.assertEqual(err.shape_a, (3, 3))
+        self.assertEqual(err.shape_b, (2, 2))
 
     def test_get_shape(self):
         self.assertEqual(MatrixOperations.get_shape([[1, 2], [3, 4]]), (2, 2))
