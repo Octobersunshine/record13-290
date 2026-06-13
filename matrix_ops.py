@@ -47,6 +47,18 @@ class MatrixOperations:
                 shape_b=shape_b,
             )
 
+    @staticmethod
+    def _validate_multiply_shape(a: np.ndarray, b: np.ndarray) -> None:
+        if a.shape[1] != b.shape[0]:
+            shape_a = tuple(a.shape)
+            shape_b = tuple(b.shape)
+            raise MatrixDimensionError(
+                f"矩阵乘法维度不匹配: {shape_a} vs {shape_b}，"
+                f"矩阵 A 的列数 ({a.shape[1]}) 必须等于矩阵 B 的行数 ({b.shape[0]})",
+                shape_a=shape_a,
+                shape_b=shape_b,
+            )
+
     @classmethod
     def add(
         cls,
@@ -69,6 +81,18 @@ class MatrixOperations:
         b = cls._to_ndarray(matrix_b)
         cls._validate_same_shape(a, b)
         result = a - b
+        return result.tolist()
+
+    @classmethod
+    def multiply(
+        cls,
+        matrix_a: Union[List[List[float]], np.ndarray],
+        matrix_b: Union[List[List[float]], np.ndarray],
+    ) -> List[List[float]]:
+        a = cls._to_ndarray(matrix_a)
+        b = cls._to_ndarray(matrix_b)
+        cls._validate_multiply_shape(a, b)
+        result = a @ b
         return result.tolist()
 
     @staticmethod

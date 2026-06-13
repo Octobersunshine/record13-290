@@ -139,14 +139,70 @@ def matrix_subtract():
         }), 500
 
 
+@app.route("/api/matrix/multiply", methods=["POST"])
+def matrix_multiply():
+    matrix_a, matrix_b, error = _parse_request()
+    if error:
+        return jsonify({
+            "success": False,
+            "error": error,
+            "operation": "multiply",
+            "shape_a": _safe_get_shape(matrix_a) if matrix_a is not None else None,
+            "shape_b": _safe_get_shape(matrix_b) if matrix_b is not None else None,
+        }), 400
+    try:
+        result = MatrixOperations.multiply(matrix_a, matrix_b)
+        return jsonify({
+            "success": True,
+            "operation": "multiply",
+            "shape_a": MatrixOperations.get_shape(matrix_a),
+            "shape_b": MatrixOperations.get_shape(matrix_b),
+            "result_shape": (len(result), len(result[0])) if result else (0, 0),
+            "result": result,
+        })
+    except MatrixDimensionError as e:
+        return jsonify({
+            "success": False,
+            "operation": "multiply",
+            "error": str(e),
+            "error_code": "DIMENSION_MISMATCH",
+            "shape_a": list(e.shape_a) if e.shape_a else _safe_get_shape(matrix_a),
+            "shape_b": list(e.shape_b) if e.shape_b else _safe_get_shape(matrix_b),
+        }), 400
+    except MatrixValidationError as e:
+        return jsonify({
+            "success": False,
+            "operation": "multiply",
+            "error": str(e),
+            "error_code": "VALIDATION_ERROR",
+            "shape_a": _safe_get_shape(matrix_a),
+            "shape_b": _safe_get_shape(matrix_b),
+        }), 400
+    except (TypeError, ValueError) as e:
+        return jsonify({
+            "success": False,
+            "operation": "multiply",
+            "error": str(e),
+            "shape_a": _safe_get_shape(matrix_a),
+            "shape_b": _safe_get_shape(matrix_b),
+        }), 400
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "operation": "multiply",
+            "error": f"服务器内部错误: {str(e)}",
+        }), 500
+
+
 @app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "service": "matrix-ops"})
 
 
 if __name__ == "__main__":
-    print("矩阵加减法服务启动中...")
+    print("矩阵运算服务启动中...")
     print("  POST /api/matrix/add      - 矩阵加法")
     print("  POST /api/matrix/subtract - 矩阵减法")
+    print("  POST /api/matrix/multiply - 矩阵乘法")
     print("  GET  /api/health          - 健康检查")
     app.run(host="0.0.0.0", port=5000, debug=True)
