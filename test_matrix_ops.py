@@ -1,0 +1,104 @@
+import unittest
+import numpy as np
+from matrix_ops import MatrixOperations
+
+
+class TestMatrixOperations(unittest.TestCase):
+    def test_add_2x2_lists(self):
+        a = [[1, 2], [3, 4]]
+        b = [[5, 6], [7, 8]]
+        result = MatrixOperations.add(a, b)
+        self.assertEqual(result, [[6, 8], [10, 12]])
+
+    def test_add_3x3_lists(self):
+        a = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        b = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+        result = MatrixOperations.add(a, b)
+        self.assertEqual(result, [[2, 2, 3], [4, 6, 6], [7, 8, 10]])
+
+    def test_add_with_numpy_arrays(self):
+        a = np.array([[1, 2], [3, 4]], dtype=float)
+        b = np.array([[1, 1], [1, 1]], dtype=float)
+        result = MatrixOperations.add(a, b)
+        self.assertEqual(result, [[2, 3], [4, 5]])
+
+    def test_add_with_negative_numbers(self):
+        a = [[-1, -2], [3, -4]]
+        b = [[1, 2], [-3, 4]]
+        result = MatrixOperations.add(a, b)
+        self.assertEqual(result, [[0, 0], [0, 0]])
+
+    def test_add_with_floats(self):
+        a = [[1.5, 2.5], [3.5, 4.5]]
+        b = [[0.5, 0.5], [0.5, 0.5]]
+        result = MatrixOperations.add(a, b)
+        self.assertEqual(result, [[2.0, 3.0], [4.0, 5.0]])
+
+    def test_subtract_2x2_lists(self):
+        a = [[5, 6], [7, 8]]
+        b = [[1, 2], [3, 4]]
+        result = MatrixOperations.subtract(a, b)
+        self.assertEqual(result, [[4, 4], [4, 4]])
+
+    def test_subtract_result_negative(self):
+        a = [[1, 2], [3, 4]]
+        b = [[10, 20], [30, 40]]
+        result = MatrixOperations.subtract(a, b)
+        self.assertEqual(result, [[-9, -18], [-27, -36]])
+
+    def test_subtract_with_numpy_arrays(self):
+        a = np.array([[10, 20], [30, 40]], dtype=float)
+        b = np.array([[1, 2], [3, 4]], dtype=float)
+        result = MatrixOperations.subtract(a, b)
+        self.assertEqual(result, [[9, 18], [27, 36]])
+
+    def test_add_shape_mismatch_raises(self):
+        a = [[1, 2, 3], [4, 5, 6]]
+        b = [[1, 2], [3, 4]]
+        with self.assertRaises(ValueError) as ctx:
+            MatrixOperations.add(a, b)
+        self.assertIn("维度不匹配", str(ctx.exception))
+
+    def test_subtract_shape_mismatch_raises(self):
+        a = [[1, 2], [3, 4], [5, 6]]
+        b = [[1, 2], [3, 4]]
+        with self.assertRaises(ValueError) as ctx:
+            MatrixOperations.subtract(a, b)
+        self.assertIn("维度不匹配", str(ctx.exception))
+
+    def test_non_matrix_list_raises(self):
+        with self.assertRaises(ValueError) as ctx:
+            MatrixOperations.add([1, 2, 3], [4, 5, 6])
+        self.assertIn("二维矩阵", str(ctx.exception))
+
+    def test_invalid_type_raises(self):
+        with self.assertRaises(TypeError):
+            MatrixOperations.add("not a matrix", [[1, 2]])
+
+    def test_irregular_matrix_raises(self):
+        with self.assertRaises(ValueError):
+            MatrixOperations.add([[1, 2, 3], [4, 5]], [[1, 2], [3, 4]])
+
+    def test_get_shape(self):
+        self.assertEqual(MatrixOperations.get_shape([[1, 2], [3, 4]]), (2, 2))
+        self.assertEqual(MatrixOperations.get_shape([[1, 2, 3], [4, 5, 6]]), (2, 3))
+        self.assertEqual(
+            MatrixOperations.get_shape(np.array([[1], [2], [3]], dtype=float)),
+            (3, 1),
+        )
+
+    def test_add_1xN_matrix(self):
+        a = [[1, 2, 3, 4]]
+        b = [[5, 6, 7, 8]]
+        result = MatrixOperations.add(a, b)
+        self.assertEqual(result, [[6, 8, 10, 12]])
+
+    def test_add_Nx1_matrix(self):
+        a = [[1], [2], [3], [4]]
+        b = [[10], [20], [30], [40]]
+        result = MatrixOperations.add(a, b)
+        self.assertEqual(result, [[11], [22], [33], [44]])
+
+
+if __name__ == "__main__":
+    unittest.main()
